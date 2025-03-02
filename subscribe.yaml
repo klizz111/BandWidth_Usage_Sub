@@ -1,0 +1,91 @@
+port: 7890
+allow-lan: true
+mode: rule
+log-level: info
+unified-delay: true
+global-client-fingerprint: chrome
+dns:
+  enable: true
+  listen: :53
+  ipv6: true
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  default-nameserver:
+  - 223.5.5.5
+  - 8.8.8.8
+  nameserver:
+  - https://dns.alidns.com/dns-query
+  - https://doh.pub/dns-query
+  fallback:
+  - https://1.0.0.1/dns-query
+  - tls://dns.google
+  fallback-filter:
+    geoip: true
+    geoip-code: CN
+    ipcidr:
+    - 240.0.0.0/4
+
+proxies:
+- name: test
+  type: vless
+  server: 54.95.212.95
+  port: 28177
+  uuid: 836c4dc2-f158-46fb-9052-07a04f1dc075
+  network: tcp
+  udp: true
+  tls: true
+  flow: xtls-rprx-vision
+  servername: www.yahoo.com
+  reality-opts:
+    public-key: TZLe_Y17iZKJDD73SQwrcHzQClYUZ_cxmn5B-XhxlD8
+    short-id: 4f36eaec
+  client-fingerprint: chrome
+
+- name: vmess-ws-klizz
+  type: vmess
+  server: ciall0.cn
+  port: 2083
+  uuid: 836c4dc2-f158-46fb-9052-07a04f1dc075
+  alterId: 0
+  cipher: auto
+  udp: true
+  tls: true
+  network: ws
+  servername: ciall0.cn
+  ws-opts:
+    path: 836c4dc2-f158-46fb-9052-07a04f1dc075-vm
+    headers:
+      Host: ciall0.cn
+
+proxy-groups:
+- name: 负载均衡
+  type: load-balance
+  url: https://www.gstatic.com/generate_204
+  interval: 300
+  strategy: round-robin
+  proxies:
+  - vless-reality-vision-klizz
+  - vmess-ws-klizz
+
+- name: 自动选择
+  type: url-test
+  url: https://www.gstatic.com/generate_204
+  interval: 300
+  tolerance: 50
+  proxies:
+  - vless-reality-vision-klizz
+  - vmess-ws-klizz
+
+- name: 🌍选择代理节点
+  type: select
+  proxies:
+  - 负载均衡
+  - 自动选择
+  - DIRECT
+  - vless-reality-vision-klizz
+  - vmess-ws-klizz
+
+rules:
+- GEOIP,LAN,DIRECT
+- GEOIP,CN,DIRECT
+- MATCH,🌍选择代理节点
