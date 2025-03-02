@@ -41,7 +41,7 @@ proxies:
     short-id: 4f36eaec
   client-fingerprint: chrome
 
-- name: vmess-ws-klizz
+- name: test
   type: vmess
   server: ciall0.cn
   port: 2083
