@@ -3,6 +3,7 @@ from datetime import datetime
 from ruamel.yaml import YAML
 from xml.etree import ElementTree as ET
 from dotenv import load_dotenv
+import subprocess
 
 def get_bandwidth_usage():
     vnstat = os.popen('vnstat --xml m').read()
@@ -36,8 +37,13 @@ def get_bandwidth_usage():
     if current_day == 1:
         yesterday = 0
     else:
+        if not os.path.exists('/tmp/vnstat_subscribe_tmp'):
+            with open('/tmp/vnstat_subscribe_tmp', 'w') as f:
+                f.write('0')
+
         with open('/tmp/vnstat_subscribe_tmp', 'r') as f:
             yesterday = float(f.read())
+
     today = total - yesterday
 
     # 写入文件
@@ -62,6 +68,11 @@ def update_yaml_file():
     with open('subscribe.yaml', 'w') as f:
         yaml.dump(config, f)
 
+def get_tracked_files():
+    result = subprocess.run(['git', 'ls-files'], stdout=subprocess.PIPE)
+    files = result.stdout.decode('utf-8').split('\n')
+    return [f for f in files if f]
+
 def git_upload(commit_message=None):
     """
     使用PyGithub将当前目录的更改推送到远程GitHub仓库
@@ -70,7 +81,7 @@ def git_upload(commit_message=None):
         commit_message: 自定义提交信息，默认为"update subscription"
     """
     try:
-        from github import Github, GithubException, Auth
+        from github import Github, GithubException, Auth, InputGitTreeElement
         import os
         from datetime import datetime
         
@@ -95,7 +106,8 @@ def git_upload(commit_message=None):
         
         # 获取仓库对象
         repo = g.get_user(username).get_repo(repo_name)
-        
+        print(repo)
+
         # 获取默认分支
         default_branch = repo.default_branch
         ref = repo.get_git_ref(f'heads/{default_branch}')
@@ -103,45 +115,54 @@ def git_upload(commit_message=None):
         # 获取当前commit
         current_commit = repo.get_commit(ref.object.sha)
         base_tree = current_commit.commit.tree
+        print(f"当前commit: {current_commit}")
         
         # 准备文件更新列表
         element_list = []
         
-        # 遍历当前目录下的所有文件
-        for root, dirs, files in os.walk('.'):
-            for file in files:
-                if file.startswith('.') or file == '.env':
-                    continue
-                    
-                file_path = os.path.join(root, file)
-                if file_path.startswith('./'):
-                    file_path = file_path[2:]
-                    
-                with open(file_path, 'rb') as f:
-                    content = f.read()
-                    
-                # 创建blob
-                blob = repo.create_git_blob(content.decode('utf-8'), 'utf-8')
-                element = {
-                    'path': file_path,
-                    'mode': '100644',
-                    'type': 'blob',
-                    'sha': blob.sha
-                }
-                element_list.append(element)
+        # 获取未被忽略的文件列表
+        tracked_files = get_tracked_files()
+        for file_path in tracked_files:
+            if file_path.startswith('.') or file_path == '.env':
+                continue
+
+            with open(file_path, 'rb') as f:
+                content = f.read()
+
+            try:
+                content_str = content.decode('utf-8')
+            except UnicodeDecodeError:
+                print(f"跳过无法解码的文件: {file_path}")
+                continue
+
+            # 创建blob
+            blob = repo.create_git_blob(content_str, 'utf-8')
+            # 使用InputGitTreeElement对象
+            element = InputGitTreeElement(
+                path=file_path,
+                mode='100644',
+                type='blob',
+                sha=blob.sha
+            )
+            element_list.append(element)
         
         # 创建新的tree
-        new_tree = repo.create_git_tree(element_list, base_tree)
-        
-        # 创建新的commit
-        parent = [repo.get_git_commit(ref.object.sha)]
-        new_commit = repo.create_git_commit(commit_message, new_tree, parent)
-        
-        # 更新引用
-        ref.edit(new_commit.sha)
-        
-        print(f"成功推送更改到GitHub: {commit_message}")
-        return True
+        try:
+            new_tree = repo.create_git_tree(element_list, base_tree)
+            
+            # 创建新的commit
+            parent = [repo.get_git_commit(ref.object.sha)]
+            new_commit = repo.create_git_commit(commit_message, new_tree, parent)
+            
+            # 更新引用
+            ref.edit(new_commit.sha)
+            
+            print(f"成功推送更改到GitHub: {commit_message}")
+            return True
+        except Exception as e:
+            print(f"创建Git树时出错: {str(e)}")
+            print(f"元素列表: {element_list}")
+            return False
         
     except GithubException as e:
         print(f"GitHub API错误: {e.data.get('message', str(e))}")
