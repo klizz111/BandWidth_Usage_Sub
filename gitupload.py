@@ -64,72 +64,83 @@ def update_yaml_file():
 
 def git_upload(commit_message=None):
     """
-    将当前目录的更改推送到远程Git仓库
+    使用PyGithub将当前目录的更改推送到远程GitHub仓库
     
     参数:
         commit_message: 自定义提交信息，默认为"update subscription"
     """
     try:
-        from git import Repo, GitCommandError
+        from github import Github, GithubException
         import os
-        from urllib.parse import urlparse, urlunparse
-
-        # 加载环境变量
+        from datetime import datetime
+        
+        # 加载认证信息
         token = os.getenv('GITHUB_TOKEN')
         username = os.getenv('GITHUB_USERNAME')
+        repo_name = os.getenv('GITHUB_REPO')  # 格式为"username/repo"
+        
+        if not all([token, username, repo_name]):
+            raise ValueError("缺少必要的环境变量配置")
 
         # 设置默认提交信息
         if commit_message is None:
             commit_message = f"update subscription - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+
+        # 连接GitHub
+        g = Github(token)
         
-        # 创建或打开仓库对象
-        repo_path = os.path.abspath('.')
-        print(f"操作仓库路径: {repo_path}")
+        # 获取仓库对象
+        repo = g.get_user(username).get_repo(repo_name)
         
-        try:
-            repo = Repo(repo_path)
-        except Exception as e:
-            print(f"不是有效的Git仓库，尝试初始化: {str(e)}")
-            repo = Repo.init(repo_path)
-            
-        # 检查是否有远程仓库
-        if len(repo.remotes) == 0:
-            print("警告: 没有配置远程仓库，只能进行本地提交")
-            has_remote = False
-        else:
-            has_remote = True
-            
-        # 更新远程仓库URL，添加认证信息
-        if repo.remotes:
-            remote = repo.remote()
-            url = list(urlparse(remote.url))
-            # 构建包含认证的URL
-            if 'github.com' in url[1]:
-                url[1] = f'{username}:{token}@github.com'
-                authenticated_url = urlunparse(url)
-                remote.set_url(authenticated_url) 
-                print("已更新远程仓库URL")
-                
-        # 添加文件到暂存区
-        repo.git.add(all=True)
+        # 获取默认分支
+        default_branch = repo.default_branch
+        ref = repo.get_git_ref(f'heads/{default_branch}')
         
-        # 检查是否有更改需要提交
-        if repo.is_dirty() or len(repo.untracked_files) > 0:
-            # 提交更改
-            repo.git.commit('-m', commit_message)
-            print(f"已提交更改: {commit_message}")
-            
-            # 如果有远程仓库，推送更改
-            if has_remote:
-                print("正在推送到远程仓库...")
-                repo.git.push()
-                print("成功推送到远程仓库")
-        else:
-            print("没有需要提交的更改")
-            
+        # 获取当前commit
+        current_commit = repo.get_commit(ref.object.sha)
+        base_tree = current_commit.commit.tree
+        
+        # 准备文件更新列表
+        element_list = []
+        
+        # 遍历当前目录下的所有文件
+        for root, dirs, files in os.walk('.'):
+            for file in files:
+                if file.startswith('.') or file == '.env':
+                    continue
+                    
+                file_path = os.path.join(root, file)
+                if file_path.startswith('./'):
+                    file_path = file_path[2:]
+                    
+                with open(file_path, 'rb') as f:
+                    content = f.read()
+                    
+                # 创建blob
+                blob = repo.create_git_blob(content.decode('utf-8'), 'utf-8')
+                element = {
+                    'path': file_path,
+                    'mode': '100644',
+                    'type': 'blob',
+                    'sha': blob.sha
+                }
+                element_list.append(element)
+        
+        # 创建新的tree
+        new_tree = repo.create_git_tree(element_list, base_tree)
+        
+        # 创建新的commit
+        parent = [repo.get_git_commit(ref.object.sha)]
+        new_commit = repo.create_git_commit(commit_message, new_tree, parent)
+        
+        # 更新引用
+        ref.edit(new_commit.sha)
+        
+        print(f"成功推送更改到GitHub: {commit_message}")
         return True
-    except GitCommandError as git_error:
-        print(f"Git操作失败: {str(git_error)}")
+        
+    except GithubException as e:
+        print(f"GitHub API错误: {e.data.get('message', str(e))}")
         return False
     except Exception as e:
         print(f"发生错误: {str(e)}")
