@@ -1,8 +1,8 @@
 import os
 from datetime import datetime
-from git import Repo, GitCommandError
 from ruamel.yaml import YAML
 from xml.etree import ElementTree as ET
+from dotenv import load_dotenv
 
 def get_bandwidth_usage():
     vnstat = os.popen('vnstat --xml m').read()
@@ -72,7 +72,12 @@ def git_upload(commit_message=None):
     try:
         from git import Repo, GitCommandError
         import os
-        
+        from urllib.parse import urlparse, urlunparse
+
+        # 加载环境变量
+        token = os.getenv('GITHUB_TOKEN')
+        username = os.getenv('GITHUB_USERNAME')
+
         # 设置默认提交信息
         if commit_message is None:
             commit_message = f"update subscription - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
@@ -94,6 +99,17 @@ def git_upload(commit_message=None):
         else:
             has_remote = True
             
+        # 更新远程仓库URL，添加认证信息
+        if repo.remotes:
+            remote = repo.remote()
+            url = list(urlparse(remote.url))
+            # 构建包含认证的URL
+            if 'github.com' in url[1]:
+                url[1] = f'{username}:{token}@github.com'
+                authenticated_url = urlunparse(url)
+                remote.set_url(authenticated_url) 
+                print("已更新远程仓库URL")
+                
         # 添加文件到暂存区
         repo.git.add(all=True)
         
@@ -120,5 +136,6 @@ def git_upload(commit_message=None):
         return False
 
 if __name__ == '__main__':
+    load_dotenv()
     update_yaml_file()    
     git_upload()
