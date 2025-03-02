@@ -26,7 +26,7 @@ dns:
     - 240.0.0.0/4
 
 proxies:
-- name: test
+- name: '3月流量: 0.35 GB'
   type: vless
   server: 54.95.212.95
   port: 28177
@@ -41,7 +41,7 @@ proxies:
     short-id: 4f36eaec
   client-fingerprint: chrome
 
-- name: test
+- name: '昨日使用流量: 337.01 MB'
   type: vmess
   server: ciall0.cn
   port: 2083
@@ -56,6 +56,21 @@ proxies:
     path: 836c4dc2-f158-46fb-9052-07a04f1dc075-vm
     headers:
       Host: ciall0.cn
+
+- name: '2025-03-03 14:42:15'
+  type: vless
+  server: 54.95.213.95
+  port: 28177
+  uuid: 836c4dc2-f158-46fb-9052-07a04f1dc075
+  network: tcp
+  udp: true
+  tls: true
+  flow: xtls-rprx-vision
+  servername: www.yahoo.com
+  reality-opts:
+    public-key: TZLe_Y17iZKJDD73SQwrcHzQClYUZ_cxmn5B-XhxlD8
+    short-id: 4f36eaec
+  client-fingerprint: chrome
 
 proxy-groups:
 - name: 负载均衡
