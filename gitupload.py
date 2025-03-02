@@ -90,6 +90,24 @@ def get_changed_files():
     return [f for f in result.stdout.decode('utf-8').split('\n') 
             if f and not f.startswith('.') and f != '.env']
 
+def _sync_with_remote(repo_path, branch):
+    """同步远程仓库"""
+    from git import GitCommandError, Repo
+    import logging 
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+    logger = logging.getLogger(__name__)
+
+    try:
+        repo = Repo(repo_path)
+        remote = repo.remote()
+        logger.info(f"正在从 {remote.name}/{branch} 同步代码...")
+        remote.pull(branch)
+        logger.info("同步完成")
+        return True
+    except GitCommandError as e:
+        logger.error(f"同步失败: {str(e)}")
+        return False
+
 def git_upload(commit_message=None):
     """推送更改到GitHub仓库"""
     try:
@@ -171,6 +189,13 @@ def git_upload(commit_message=None):
             ref.edit(new_commit.sha)
             
             print(f"成功推送更改到GitHub: {commit_message}")
+
+            # 同步远程仓库
+            print("正在同步远程仓库...")
+            import time
+            time.sleep(2)
+            _sync_with_remote('.', default_branch)
+
             return True
         except Exception as e:
             print(f"创建Git树或提交时出错: {str(e)}")
