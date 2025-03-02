@@ -57,7 +57,7 @@ proxies:
     headers:
       Host: ciall0.cn
 
-- name: '2025-03-02 17:16:02'
+- name: '2025-03-02 17:20:00'
   type: vless
   server: 54.95.213.95
   port: 28177
