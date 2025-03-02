@@ -70,16 +70,18 @@ def git_upload(commit_message=None):
         commit_message: 自定义提交信息，默认为"update subscription"
     """
     try:
-        from github import Github, GithubException
+        from github import Github, GithubException, Auth
         import os
         from datetime import datetime
         
         # 加载认证信息
-        token = os.getenv('GITHUB_TOKEN')
+        access_token = os.getenv('GITHUB_TOKEN')
         username = os.getenv('GITHUB_USERNAME')
         repo_name = os.getenv('GITHUB_REPO')  # 格式为"username/repo"
         
-        if not all([token, username, repo_name]):
+        auth = Auth.token(access_token)
+
+        if not all([access_token, username, repo_name]):
             raise ValueError("缺少必要的环境变量配置")
 
         # 设置默认提交信息
@@ -87,7 +89,9 @@ def git_upload(commit_message=None):
             commit_message = f"update subscription - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
 
         # 连接GitHub
-        g = Github(token)
+        g = Github(auth=auth)
+
+        print(g.get_user().login)
         
         # 获取仓库对象
         repo = g.get_user(username).get_repo(repo_name)
