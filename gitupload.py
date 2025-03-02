@@ -38,24 +38,28 @@ def get_bandwidth_usage():
     total = round((rx + tx) / 1024 / 1024 / 1024, 2)
 
     # 计算昨日使用量
-    tmp_file = '/tmp/vnstat_subscribe_tmp'
-    yesterday = 0
-    
-    if current_day != 1:
-        if os.path.exists(tmp_file):
-            with open(tmp_file, 'r') as f:
-                try:
-                    yesterday = float(f.read().strip())
-                except ValueError:
-                    yesterday = 0
-    
-    today = total - yesterday
+    vnstat = os.popen('vnstat --xml d').read()
+    tree = ET.fromstring(vnstat)
+    traffic = tree.find("interface").find("traffic")
 
-    # 保存当前总量
-    with open(tmp_file, 'w') as f:
-        f.write(str(total))
+    # 查找昨日数据
+    for day_data in traffic.find("days").iter("day"):
+        date = day_data.find("date")
+        if date is None:
+            continue
+        year_node = date.find("year")
+        month_node = date.find("month")
+        day_node = date.find("day")
+        if year_node is None or month_node is None or day_node is None:
+            continue
+        if (int(year_node.text) == current_year and int(month_node.text) == current_month and int(day_node.text) == current_day - 1):
+            rx = int(day_data.find("rx").text)
+            tx = int(day_data.find("tx").text)
+            break
+    
+    yesterday = round((rx + tx) / 1024 / 1024 , 2)
 
-    return total, today
+    return total, yesterday
 
 def update_yaml_file():
     """更新订阅配置文件"""
@@ -70,7 +74,7 @@ def update_yaml_file():
     
     # 更新节点名称
     config['proxies'][0]['name'] = f"{now.month}月流量: {total} GB"
-    config['proxies'][1]['name'] = f"昨日使用流量: {today} GB"
+    config['proxies'][1]['name'] = f"昨日使用流量: {today} MB"
     config['proxies'][2]['name'] = now.strftime('%Y-%m-%d %H:%M:%S')
 
     with open('subscribe.yaml', 'w') as f:
