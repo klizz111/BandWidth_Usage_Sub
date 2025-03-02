@@ -55,7 +55,7 @@ def update_yaml_file():
     # 更新yaml文件
     total, today = get_bandwidth_usage()
     config['proxies'][0]['name'] = str(datetime.now().month) + '月流量: ' +  str(total) + ' GB'
-    config['proxies'][1]['name'] = str(datetime.now().month) + '昨日使用流量: ' +  str(today) + ' GB'
+    config['proxies'][1]['name'] = '昨日使用流量: ' +  str(today) + ' GB'
 
     # 写入yaml文件
     with open('subscribe.yaml', 'w') as f:
