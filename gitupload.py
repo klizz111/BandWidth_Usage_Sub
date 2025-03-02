@@ -79,7 +79,7 @@ def git_upload(commit_message=None):
         username = os.getenv('GITHUB_USERNAME')
         repo_name = os.getenv('GITHUB_REPO')  # 格式为"username/repo"
         
-        auth = Auth.token(access_token)
+        auth = Auth.Token(access_token)
 
         if not all([access_token, username, repo_name]):
             raise ValueError("缺少必要的环境变量配置")
