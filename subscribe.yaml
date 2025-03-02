@@ -26,7 +26,7 @@ dns:
     - 240.0.0.0/4
 
 proxies:
-- name: test
+- name: '3月流量: 0.11 GB'
   type: vless
   server: 54.95.212.95
   port: 28177
@@ -41,7 +41,7 @@ proxies:
     short-id: 4f36eaec
   client-fingerprint: chrome
 
-- name: test
+- name: '3昨日使用流量: 0.0 GB'
   type: vmess
   server: ciall0.cn
   port: 2083

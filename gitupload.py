@@ -33,16 +33,16 @@ def get_bandwidth_usage():
 
     total = round(total / 1024 / 1024 / 1024, 2)
 
-        # 写入文件
+    if current_day == 1:
+        yesterday = 0
+    else:
+        with open('/tmp/vnstat_subscribe_tmp', 'r') as f:
+            yesterday = float(f.read())
+    today = total - yesterday
+
+    # 写入文件
     with open('/tmp/vnstat_subscribe_tmp', 'w') as f:
         f.write(str(total))
-
-        if current_day == 1:
-            yesterday = 0
-        else:
-            with open('/tmp/vnstattmp', 'r') as f:
-                yesterday = float(f.read())
-    today = total - yesterday
 
     return total, today
 
