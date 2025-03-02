@@ -41,7 +41,7 @@ proxies:
     short-id: 4f36eaec
   client-fingerprint: chrome
 
-- name: '昨日使用流量: 0.010000000000000009 GB'
+- name: '昨日使用流量: 0.0 GB'
   type: vmess
   server: ciall0.cn
   port: 2083
@@ -57,7 +57,7 @@ proxies:
     headers:
       Host: ciall0.cn
 
-- name: '2025-03-02 17:06:18'
+- name: '2025-03-02 17:15:44'
   type: vless
   server: 54.95.213.95
   port: 28177
