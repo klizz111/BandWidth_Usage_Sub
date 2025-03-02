@@ -49,7 +49,7 @@ def get_bandwidth_usage():
 def update_yaml_file():
     # 解析yaml文件
     yaml = YAML()
-    with open('config.yaml', 'r') as f:
+    with open('subscribe.yaml', 'r') as f:
         config = yaml.load(f)
 
     # 更新yaml文件
@@ -58,7 +58,7 @@ def update_yaml_file():
     config['proxies'][1]['name'] = str(datetime.now().month) + '昨日使用流量: ' +  str(today) + ' GB'
 
     # 写入yaml文件
-    with open('config.yaml', 'w') as f:
+    with open('subscribe.yaml', 'w') as f:
         yaml.dump(config, f)
 
 def git_upload(commit_message=None):
@@ -119,4 +119,5 @@ def git_upload(commit_message=None):
         return False
 
 if __name__ == '__main__':
+    update_yaml_file()    
     git_upload()
