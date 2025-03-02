@@ -68,10 +68,15 @@ def update_yaml_file():
     with open('subscribe.yaml', 'w') as f:
         yaml.dump(config, f)
 
-def get_tracked_files():
-    result = subprocess.run(['git', 'ls-files'], stdout=subprocess.PIPE)
+def get_changed_files():
+    """获取已修改和新增的文件列表"""
+    # 将所有新文件添加到跟踪中
+    subprocess.run(['git', 'add', '-A'], stdout=subprocess.PIPE)
+    
+    # 获取已更改的文件
+    result = subprocess.run(['git', 'diff', '--name-only', '--cached'], stdout=subprocess.PIPE)
     files = result.stdout.decode('utf-8').split('\n')
-    return [f for f in files if f]
+    return [f for f in files if f and not f.startswith('.') and f != '.env']
 
 def git_upload(commit_message=None):
     """
@@ -88,7 +93,7 @@ def git_upload(commit_message=None):
         # 加载认证信息
         access_token = os.getenv('GITHUB_TOKEN')
         username = os.getenv('GITHUB_USERNAME')
-        repo_name = os.getenv('GITHUB_REPO')  # 格式为"username/repo"
+        repo_name = os.getenv('GITHUB_REPO')  # 仓库名称
         
         auth = Auth.Token(access_token)
 
@@ -101,7 +106,6 @@ def git_upload(commit_message=None):
 
         # 连接GitHub
         g = Github(auth=auth)
-
         print(g.get_user().login)
         
         # 获取仓库对象
@@ -120,32 +124,39 @@ def git_upload(commit_message=None):
         # 准备文件更新列表
         element_list = []
         
-        # 获取未被忽略的文件列表
-        tracked_files = get_tracked_files()
-        for file_path in tracked_files:
-            if file_path.startswith('.') or file_path == '.env':
-                continue
-
-            with open(file_path, 'rb') as f:
-                content = f.read()
-
-            try:
-                content_str = content.decode('utf-8')
-            except UnicodeDecodeError:
-                print(f"跳过无法解码的文件: {file_path}")
-                continue
-
-            # 创建blob
-            blob = repo.create_git_blob(content_str, 'utf-8')
-            # 使用InputGitTreeElement对象
-            element = InputGitTreeElement(
-                path=file_path,
-                mode='100644',
-                type='blob',
-                sha=blob.sha
-            )
-            element_list.append(element)
+        # 获取已修改的文件列表
+        changed_files = get_changed_files()
+        print(f"需要提交的文件: {changed_files}")
         
+        for file_path in changed_files:
+            try:
+                with open(file_path, 'rb') as f:
+                    content = f.read()
+
+                try:
+                    content_str = content.decode('utf-8')
+                    # 创建blob
+                    blob = repo.create_git_blob(content_str, 'utf-8')
+                except UnicodeDecodeError:
+                    print(f"文件 {file_path} 为二进制文件，使用base64编码提交")
+                    import base64
+                    blob = repo.create_git_blob(base64.b64encode(content).decode('ascii'), 'base64')
+                
+                # 使用InputGitTreeElement对象
+                element = InputGitTreeElement(
+                    path=file_path,
+                    mode='100644',
+                    type='blob',
+                    sha=blob.sha
+                )
+                element_list.append(element)
+            except Exception as e:
+                print(f"处理文件 {file_path} 时出错: {str(e)}")
+        
+        if not element_list:
+            print("没有文件需要提交")
+            return True
+            
         # 创建新的tree
         try:
             new_tree = repo.create_git_tree(element_list, base_tree)
@@ -161,7 +172,6 @@ def git_upload(commit_message=None):
             return True
         except Exception as e:
             print(f"创建Git树时出错: {str(e)}")
-            print(f"元素列表: {element_list}")
             return False
         
     except GithubException as e:
