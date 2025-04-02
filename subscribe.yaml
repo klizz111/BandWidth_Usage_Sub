@@ -26,11 +26,11 @@ dns:
     - 240.0.0.0/4
 
 proxies:
-- name: '4月流量: 5.7 GB'
+- name: '4月流量: 5.73 GB'
   type: vless
-  server: 54.95.212.95
+  server: 54.195.22.95
   port: 28177
-  uuid: 836c4dc2-f158-46fb-9052-07a04f1dc075
+  uuid: 836c4dc2-c158-46fb-9052-07a04f1dc075
   network: tcp
   udp: true
   tls: true
@@ -43,7 +43,7 @@ proxies:
 
 - name: '昨日使用流量: 5841.15 MB'
   type: vmess
-  server: ciall0.cn
+  server: google.com
   port: 2083
   uuid: 836c4dc2-f158-46fb-9052-07a04f1dc075
   alterId: 0
@@ -51,15 +51,15 @@ proxies:
   udp: true
   tls: true
   network: ws
-  servername: ciall0.cn
+  servername: google.com
   ws-opts:
     path: 836c4dc2-f158-46fb-9052-07a04f1dc075-vm
     headers:
-      Host: ciall0.cn
+      Host: google.com
 
-- name: '2025-04-02 01:30:03'
+- name: '2025-04-02 13:45:23'
   type: vless
-  server: 54.95.213.95
+  server: 54.195.13.195
   port: 28177
   uuid: 836c4dc2-f158-46fb-9052-07a04f1dc075
   network: tcp
@@ -98,7 +98,7 @@ proxy-groups:
   - 自动选择
   - DIRECT
   - vless-reality-vision-klizz
-  - vmess-ws-klizz
+  - vmess-ws-kliz
 
 rules:
 - GEOIP,LAN,DIRECT
