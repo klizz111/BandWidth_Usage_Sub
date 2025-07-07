@@ -41,7 +41,7 @@ proxies:
     short-id: 4f36eaec
   client-fingerprint: chrome
 
-- name: '昨日使用流量: 792.02 MB'
+- name: '昨日使用流量: 8.04 MB'
   type: vmess
   server: google.com
   port: 2083
@@ -57,7 +57,7 @@ proxies:
     headers:
       Host: google.com
 
-- name: '2025-07-07 01:30:03'
+- name: '2025-07-08 01:30:02'
   type: vless
   server: 54.195.13.195
   port: 28177
