@@ -7,6 +7,12 @@ from xml.etree import ElementTree as ET
 from dotenv import load_dotenv
 from github import Github, GithubException, Auth, InputGitTreeElement
 
+import sys
+
+# 确保脚本运行时切换到脚本所在目录
+script_dir = os.path.dirname(os.path.abspath(__file__))
+os.chdir(script_dir)
+
 def get_bandwidth_usage():
     """获取当月流量使用情况"""
     vnstat = os.popen('vnstat --xml m').read()
