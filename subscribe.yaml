@@ -26,7 +26,7 @@ dns:
     - 240.0.0.0/4
 
 proxies:
-- name: '1月流量: 0.01 GB'
+- name: '1月流量: 0.13 GB'
   type: vless
   server: 54.195.22.95
   port: 28177
@@ -41,7 +41,7 @@ proxies:
     short-id: 4f36eaec
   client-fingerprint: chrome
 
-- name: '昨日使用流量: 5.69 MB'
+- name: '昨日使用流量: 130.47 MB'
   type: vmess
   server: google.com
   port: 2083
@@ -57,7 +57,7 @@ proxies:
     headers:
       Host: google.com
 
-- name: '2026-01-01 01:00:02'
+- name: '2026-01-02 01:00:02'
   type: vless
   server: 54.195.13.195
   port: 28177
